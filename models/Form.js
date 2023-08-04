@@ -1,10 +1,23 @@
 const mongoose = require("mongoose");
 
 const formSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  headerImage: { type: String }, // URL to the header image
-  questions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
+  question: {
+    type: String,
+    required: true,
+  },
+  categories: {
+    type: [String],
+    required: true,
+  },
+  items: {
+    type: [
+      {
+        item: String,
+        category: String,
+      },
+    ],
+    required: true,
+  },
 });
 
 const Form = mongoose.model("Form", formSchema);

@@ -1,136 +1,191 @@
-import React, { useState } from "react";
 import axios from "axios";
+import React, { useState } from "react";
 
-const FormBuilder = () => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    headerImage: "",
-    questions: [],
-  });
+const CategoryQuestionForm = () => {
+  const [question, setQuestion] = useState("");
+  const [categories, setCategories] = useState(["Option 1", "Option 2"]);
+  const [newCategory, setNewCategory] = useState("");
+  const [item, setItem] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [editIndex, setEditIndex] = useState(-1);
+  const [itemsList, setItemsList] = useState([]);
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
-  };
-
-  const handleAddQuestion = () => {
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      questions: [
-        ...prevFormData.questions,
-        { type: "", questionText: "", image: "" },
-      ],
-    }));
-  };
-
-  const handleQuestionChange = (event, index) => {
-    const { name, value } = event.target;
-    setFormData((prevFormData) => {
-      const updatedQuestions = [...prevFormData.questions];
-      updatedQuestions[index] = { ...updatedQuestions[index], [name]: value };
-      return { ...prevFormData, questions: updatedQuestions };
-    });
-  };
-
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const formToSend = {
-        ...formData,
-        questions: formData.questions.map((question) => ({
-          ...question,
-          // Remove any empty properties (optional)
-          // Only include properties that have values
-        })),
-      };
-      const response = await axios.post(
-        "http://127.0.0.1:5000/api/forms",
-        formToSend
-      ); // Change the API endpoint as needed
-      console.log("Form created successfully:", response.data);
-      // Handle success (e.g., show a success message, redirect, etc.)
-    } catch (error) {
-      console.error("Error creating form:", error);
-      // Handle error (e.g., show an error message, etc.)
+  const handleAddCategory = () => {
+    if (newCategory) {
+      setCategories([...categories, newCategory]);
+      setNewCategory("");
     }
+  };
+
+  const handleEditCategory = (index) => {
+    setEditIndex(index);
+    setNewCategory(categories[index]);
+  };
+
+  const handleSaveEdit = () => {
+    if (newCategory) {
+      const updatedCategories = [...categories];
+      updatedCategories[editIndex] = newCategory;
+      setCategories(updatedCategories);
+      setEditIndex(-1);
+      setNewCategory("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditIndex(-1);
+    setNewCategory("");
+  };
+
+  const handleAddItem = () => {
+    if (item && selectedCategory) {
+      setItemsList([...itemsList, { item, category: selectedCategory }]);
+      setItem("");
+      setSelectedCategory("");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      question,
+      categories,
+      itemsList,
+    };
+    axios
+      .post("http://127.0.0.1:5000/api/category-form", formData)
+      .then((response) => {
+        console.log("Form data submitted:", response.data);
+        // Do any other necessary actions after successful form submission
+      })
+      .catch((error) => {
+        console.error("Error submitting form data:", error);
+        // Handle errors if the form submission fails
+      });
+    // console.log("Submitted:", { question, categories, itemsList });
+  };
+
+  const handleDeletecategories = (index) => {
+    const updatedItemsList = [...categories];
+    updatedItemsList.splice(index, 1);
+    setCategories(updatedItemsList);
+  };
+  const handleDeleteItem = (index) => {
+    const updatedItemsList = [...itemsList];
+    updatedItemsList.splice(index, 1);
+    setItemsList(updatedItemsList);
   };
 
   return (
     <div>
-      <h2>Form Builder</h2>
-      <form onSubmit={handleFormSubmit}>
-        <label>
-          Title:
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-          />
-        </label>
-        <label>
-          Description:
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            required
-          />
-        </label>
-        <label>
-          Header Image URL:
-          <input
-            type="text"
-            name="headerImage"
-            value={formData.headerImage}
-            onChange={handleInputChange}
-          />
-        </label>
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="question">Question:</label>
+        <input
+          type="text"
+          id="question"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          required
+        />
+        <br />
+        <br />
 
-        <h3>Questions:</h3>
-        {formData.questions.map((question, index) => (
-          <div key={index}>
-            <label>
-              Question Type:
-              <input
-                type="text"
-                name="type"
-                value={question.type}
-                onChange={(event) => handleQuestionChange(event, index)}
-                required
-              />
-            </label>
-            <label>
-              Question Text:
-              <input
-                type="text"
-                name="questionText"
-                value={question.questionText}
-                onChange={(event) => handleQuestionChange(event, index)}
-                required
-              />
-            </label>
-            <label>
-              Question Image URL:
-              <input
-                type="text"
-                name="image"
-                value={question.image}
-                onChange={(event) => handleQuestionChange(event, index)}
-              />
-            </label>
-          </div>
-        ))}
-
-        <button type="button" onClick={handleAddQuestion}>
-          Add Question
+        <label htmlFor="category">Categories:</label>
+        <div>
+          {categories.map((category, index) => (
+            <div key={index}>
+              {editIndex === index ? (
+                <>
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                  />
+                  <button type="button" onClick={handleSaveEdit}>
+                    Save
+                  </button>
+                  <button type="button" onClick={handleCancelEdit}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  {category}
+                  <button
+                    type="button"
+                    onClick={() => handleEditCategory(index)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeletecategories(index)}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          placeholder="Enter a new category"
+        />
+        <button type="button" onClick={handleAddCategory}>
+          Add Category
         </button>
-        <button type="submit">Create Form</button>
+        <br />
+        <br />
+
+        <label htmlFor="item">Create Item:</label>
+        <input
+          type="text"
+          id="item"
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+        />
+
+        <label htmlFor="categoryDropdown">Select Category:</label>
+        <select
+          id="categoryDropdown"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          <option value="" disabled>
+            Select a category
+          </option>
+          {categories.map((option, index) => (
+            <option key={index} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={handleAddItem}>
+          Add More Item
+        </button>
+
+        <ul>
+          {itemsList.map((itemData, index) => (
+            <li key={index}>
+              Item: {itemData.item}, Category: {itemData.category}
+              <button type="button" onClick={() => handleDeleteItem(index)}>
+                Delete Item
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <br />
+        <br />
+
+        <input type="submit" value="Submit" />
       </form>
     </div>
   );
 };
 
-export default FormBuilder;
+export default CategoryQuestionForm;
